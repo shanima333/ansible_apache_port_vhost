@@ -1,0 +1,52 @@
+---
+
+ - name: "Configure Apache and Host a website using Vhost"
+   hosts: all
+   become: true
+   vars:
+     httpd_port: 8080
+     httpd_domain: www.shani.com
+     httpd_owner: apache
+     httpd_group: apache
+   tasks:
+
+     - name: "Install apache and php service"
+       yum:
+         name:
+           - httpd
+           - php 
+         state: present
+
+     - name: "Update apache configuration file"
+       template:
+         src: httpd.conf.tmpl
+         dest: /etc/httpd/conf/httpd.conf
+         owner: "{{ httpd_owner }}"
+         group: "{{ httpd_group }}"
+ 
+     - name: "Update Vhost file"
+       template:
+         src: vhost.tmpl
+         dest: "/etc/httpd/conf.d/{{ httpd_domain }}.conf"
+         owner: "{{ httpd_owner }}"
+         group: "{{ httpd_group }}"
+         
+     - name: "Create website document root"
+       file:
+         path: "/var/www/html/{{httpd_domain}}"
+         state: directory
+         owner: "{{ httpd_owner }}"
+         group: "{{ httpd_group }}"
+
+     - name: "Upload website files"
+       copy:
+         src: website/
+         dest: "/var/www/html/{{ httpd_domain }}"
+         owner: "{{ httpd_owner }}"
+         group: "{{ httpd_group }}"
+
+     - name: "Restart services"
+       service: 
+         name: httpd
+         state: restarted
+         
